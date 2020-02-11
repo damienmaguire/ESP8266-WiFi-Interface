@@ -18,3 +18,6 @@ t=temp<br>
 *=end of string<br>
 xxx=three digit integer for each parameter eg p100 = 100kw.<br>
 updates can be every 100ms or longer.<br>
+<br>
+SSID,Password and BAUD rate can be configured.<br>
+Goto : 192.168.4.1 once connected<br>
