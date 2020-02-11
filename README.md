@@ -5,15 +5,16 @@ The current version is designed to accept data from the ISA CAN shunt. Extra par
 
 The information is transmitted over serial to the esp8266 at 19200 baud 8n1 in the form :
 vxxx,bxxx,nxxx,ixxx,pxxx,ahxxx,kwhxxx,txxx* where :
-
-v=v1
-b=v2
-n=v3
-i=current
-p=power
-ah=amp hours
-kwh=kilowatt hours
-t=temp
-*=end of string
-xxx=three digit integer for each parameter eg p100 = 100kw.
-updates can be every 100ms or longer.
+<br>
+<br>
+v=v1<br>
+b=v2<br>
+n=v3<br>
+i=current<br>
+p=power<br>
+ah=amp hours<br>
+kwh=kilowatt hours<br>
+t=temp<br>
+*=end of string<br>
+xxx=three digit integer for each parameter eg p100 = 100kw.<br>
+updates can be every 100ms or longer.<br>
