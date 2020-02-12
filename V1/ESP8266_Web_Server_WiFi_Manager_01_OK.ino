@@ -18,7 +18,7 @@ String v1, v2, v3, i, p, ah, kwh, t;
 //Redirect to our html web page
 void handleRoot() {
   server.sendHeader("Location", "/index.html", true);
-  server.send(302, "text/plane", "");
+  server.send(302, "text/plain", "");
 }
 
 void handleWebRequests() {
@@ -39,28 +39,28 @@ void handleWebRequests() {
 }
 
 void PackVoltageV1() {
-  server.send(200, "text/plane", v1);
+  server.send(200, "text/plain", v1);
 }
 void PackVoltageV2() {
-  server.send(200, "text/plane", v2);
+  server.send(200, "text/plain", v2);
 }
 void PackVoltageV3() {
-  server.send(200, "text/plane", v3);
+  server.send(200, "text/plain", v3);
 }
 void Power() {
-  server.send(200, "text/plane", i);
+  server.send(200, "text/plain", i);
 }
 void Current() {
-  server.send(200, "text/plane", p);
+  server.send(200, "text/plain", p);
 }
 void AmpereHours() {
-  server.send(200, "text/plane", ah);
+  server.send(200, "text/plain", ah);
 }
 void KilowattHours() {
-  server.send(200, "text/plane", kwh);
+  server.send(200, "text/plain", kwh);
 }
 void Temperature() {
-  server.send(200, "text/plane", t);
+  server.send(200, "text/plain", t);
 }
 
 void setup(void) {
