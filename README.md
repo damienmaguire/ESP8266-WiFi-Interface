@@ -27,4 +27,4 @@ Mock ESP8266 Server
 To run a local php server cd to V1/data/ and run
 `php -S localhost:9898`
 
-Also in index.html comment out the config.json include and use config-dev.json instead.
+Also in index.html comment out the config.js include and use config-dev.js instead.

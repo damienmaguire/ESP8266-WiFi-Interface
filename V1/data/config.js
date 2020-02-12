@@ -1,4 +1,5 @@
 var config = {
+  saveAction: '/SaveConfig',
   defaultChartConfig: {
       chart: {
           type: 'solidgauge'
@@ -58,7 +59,8 @@ var config = {
     title: 'Pack Voltage',
     valueSuffix: ' V',
     updateFrequency: 10000,
-    dataEndpoint: '/testdata.php?voltage'
+    dataEndpoint: '/PackVoltageV1',
+    enabled: true
   }, {
     min: 0,
     max: 200,
@@ -66,7 +68,8 @@ var config = {
     title: 'Power',
     valueSuffix: ' KW',
     updateFrequency: 1000,
-    dataEndpoint: '/testdata.php?power'
+    dataEndpoint: '/Power',
+    enabled: true
   }, {
     min: 0,
     max: 100,
@@ -74,6 +77,7 @@ var config = {
     title: 'Temperature',
     valueSuffix: ' °C',
     updateFrequency: 1000,
-    dataEndpoint: '/testdata.php?temperature'
+    dataEndpoint: '/Temperature',
+    enabled: true
   }]
 }

@@ -8,66 +8,11 @@
   <script src="/export-data.js"></script>
 
   <!-- use mock data server -->
-  <!-- <script src="/config-dev.json"></script> -->
+  <script src="/config-dev.js"></script>
   <!-- use ESP8266 Server -->
-  <script src="/config.json"></script>
+  <!-- <script src="/config.js"></script> -->
 
-  <style>
-
-  .highcharts-figure .chart-container {
-	width: 300px;
-	height: 200px;
-	float: left;
-}
-
-.highcharts-figure, .highcharts-data-table table {
-	width: 1200px;
-	margin: 0 auto;
-}
-
-.highcharts-data-table table {
-    font-family: Verdana, sans-serif;
-    border-collapse: collapse;
-    border: 1px solid #EBEBEB;
-    margin: 10px auto;
-    text-align: center;
-    width: 100%;
-    max-width: 500px;
-}
-.highcharts-data-table caption {
-    padding: 1em 0;
-    font-size: 1.2em;
-    color: #555;
-}
-.highcharts-data-table th {
-	font-weight: 600;
-    padding: 0.5em;
-}
-.highcharts-data-table td, .highcharts-data-table th, .highcharts-data-table caption {
-    padding: 0.5em;
-}
-.highcharts-data-table thead tr, .highcharts-data-table tr:nth-child(even) {
-    background: #f8f8f8;
-}
-.highcharts-data-table tr:hover {
-    background: #f1f7ff;
-}
-
-@media (max-width: 600px) {
-	.highcharts-figure, .highcharts-data-table table {
-		width: 100%;
-	}
-	.highcharts-figure .chart-container {
-		width: 300px;
-		float: none;
-		margin: 0 auto;
-	}
-
-}
-
-
-
-  </style>
+<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
   <h2></h2>
@@ -83,54 +28,57 @@ var chartContainer = document.getElementById("container");
 
 config.charts.forEach(function(chartConfig) {
 
-  var node = document.createElement("div");
-  node.classList.add('chart-container')
-  chartContainer.appendChild(node);
-  var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
-      yAxis: {
-          min: chartConfig.min,
-          max: chartConfig.max,
-          title: {
-              text: chartConfig.title
-          }
-      },
-      credits: {
-          enabled: false
-      },
-      series: [{
-          name: chartConfig.title,
-          data: [chartConfig.initialValue],
-          dataLabels: {
-              format:
-                  '<div style="text-align:center">' +
-                  '<span style="font-size:25px">{y}</span><br/>' +
-                  '<span style="font-size:12px;opacity:0.4">V</span>' +
-                  '</div>'
-          },
-          tooltip: {
-              valueSuffix: chartConfig.valueSuffix
-          }
-      }]
-  }));
+  if (chartConfig.enabled) {
+    var node = document.createElement("div");
+    node.classList.add('chart-container')
+    chartContainer.appendChild(node);
+    var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
+        yAxis: {
+            min: chartConfig.min,
+            max: chartConfig.max,
+            title: {
+                text: chartConfig.title
+            }
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+            name: chartConfig.title,
+            data: [chartConfig.initialValue],
+            dataLabels: {
+                format:
+                    '<div style="text-align:center">' +
+                    '<span style="font-size:25px">{y}</span><br/>' +
+                    '<span style="font-size:12px;opacity:0.4">' + chartConfig.valueSuffix + '</span>' +
+                    '</div>'
+            },
+            tooltip: {
+                valueSuffix: chartConfig.valueSuffix
+            }
+        }]
+    }));
 
-  setInterval(function ( ) {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        var point,
-          newVal,
-          inc;
-    	if (chart) {
-    		point = chart.series[0].points[0];
-    		inc = parseFloat(this.responseText);
-    		newVal =  inc;
-    		point.update(newVal);
-    	}
-      }
-    };
-    xhttp.open("GET", chartConfig.dataEndpoint, true);
-    xhttp.send();
-  }, chartConfig.updateFrequency);
+    setInterval(function ( ) {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var point,
+            newVal,
+            inc;
+      	if (chart) {
+      		point = chart.series[0].points[0];
+      		inc = parseFloat(this.responseText);
+      		newVal =  inc;
+      		point.update(newVal);
+      	}
+        }
+      };
+      xhttp.open("GET", chartConfig.dataEndpoint, true);
+      xhttp.send();
+    }, chartConfig.updateFrequency);
+
+  }
 
 });
 

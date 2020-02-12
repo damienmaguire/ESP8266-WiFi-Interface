@@ -62,6 +62,9 @@ void KilowattHours() {
 void Temperature() {
   server.send(200, "text/plain", t);
 }
+void SaveConfig() {
+  server.send(200, "text/plain", "No Yet Implemented");
+}
 
 void setup(void) {
   Serial.begin(19200);
@@ -102,6 +105,7 @@ void setup(void) {
   server.on("/AmpereHours", AmpereHours);
   server.on("/KilowattHours", KilowattHours);
   server.on("/Temperature", Temperature);
+  server.on("/SaveConfig", SaveConfig);
   server.onNotFound(handleWebRequests);
   server.begin();
   Serial.println("HTTP server started");
