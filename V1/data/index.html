@@ -2,13 +2,18 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="/highcharts.js"></script>
-  <script src="/highcharts.js"></script>
   <script src="/highcharts-more.js"></script>
   <script src="/solid-gauge.js"></script>
-  <script src="/modules/exporting.js"></script>
+  <script src="/exporting.js"></script>
   <script src="/export-data.js"></script>
+
+  <!-- use mock data server -->
+  <!-- <script src="/config-dev.json"></script> -->
+  <!-- use ESP8266 Server -->
+  <script src="/config.json"></script>
+
   <style>
-  
+
   .highcharts-figure .chart-container {
 	width: 300px;
 	height: 200px;
@@ -59,450 +64,76 @@
 	}
 
 }
-  
-  
-  
-  
- 
+
+
+
   </style>
 </head>
 <body>
   <h2></h2>
-  <figure class="highcharts-figure">
-  <div id="container-PackVoltageV1" class="chart-container"></div>
-  <div id="container-PackVoltageV2" class="chart-container"></div>
-  <div id="container-PackVoltageV3" class="chart-container"></div>
-  <div id="container-Current" class="chart-container"></div>
-  <div id="container-Power" class="chart-container"></div>
-  <div id="container-AmpereHours" class="chart-container"></div>
-  <div id="container-KilowattHours" class="chart-container"></div>
-  <div id="container-Temperature" class="chart-container"></div>
+  <figure id="container" class="highcharts-figure">
   </figure>
-  
-  
+
 </body>
 
 
 <script>
-setInterval(function ( ) {
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (PackVoltageV1) {
-			point = PackVoltageV1.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/PackVoltageV1", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (PackVoltageV2) {
-			point = PackVoltageV2.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/PackVoltageV2", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (PackVoltageV3) {
-			point = PackVoltageV3.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/PackVoltageV3", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (Current) {
-			point = Current.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/Current", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (Power) {
-			point = Power.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/Power", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (AmpereHours) {
-			point = AmpereHours.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/AmpereHours", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (KilowattHours) {
-			point = KilowattHours.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/KilowattHours", true);
-  xhttp.send();
-  
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-	    var point,
-        newVal,
-        inc;
-		if (Temperature) {
-			point = Temperature.series[0].points[0];
-			inc = parseFloat(this.responseText);
-			newVal =  inc;
-			point.update(newVal);
-		} 
-    }
-  };
-  xhttp.open("GET", "/Temperature", true);
-  xhttp.send();
-  
- 
-}, 1000 ) ;
+var chartContainer = document.getElementById("container");
 
 
+config.charts.forEach(function(chartConfig) {
 
+  var node = document.createElement("div");
+  node.classList.add('chart-container')
+  chartContainer.appendChild(node);
+  var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
+      yAxis: {
+          min: chartConfig.min,
+          max: chartConfig.max,
+          title: {
+              text: chartConfig.title
+          }
+      },
+      credits: {
+          enabled: false
+      },
+      series: [{
+          name: chartConfig.title,
+          data: [chartConfig.initialValue],
+          dataLabels: {
+              format:
+                  '<div style="text-align:center">' +
+                  '<span style="font-size:25px">{y}</span><br/>' +
+                  '<span style="font-size:12px;opacity:0.4">V</span>' +
+                  '</div>'
+          },
+          tooltip: {
+              valueSuffix: chartConfig.valueSuffix
+          }
+      }]
+  }));
 
-var gaugeOptions = {
-    chart: {
-        type: 'solidgauge'
-    },
-    title: null,
-    pane: {
-        center: ['50%', '85%'],
-        size: '140%',
-        startAngle: -90,
-        endAngle: 90,
-        background: {
-            backgroundColor:
-                Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-            innerRadius: '60%',
-            outerRadius: '100%',
-            shape: 'arc'
-        }
-    },
-    exporting: {
-        enabled: false
-    },
-    tooltip: {
-        enabled: false
-    },
-    // the value axis
-    yAxis: {
-        stops: [
-            [0.1, '#55BF3B'], // green
-            [0.5, '#DDDF0D'], // yellow
-            [0.9, '#DF5353']  // red
-        ],
-        lineWidth: 0,
-        tickWidth: 0,
-        minorTickInterval: null,
-        tickAmount: 2,
-        title: {
-            y: -70
-        },
-        labels: {
-            y: 16
-        }
-    },
-    plotOptions: {
-        solidgauge: {
-            dataLabels: {
-                y: 5,
-                borderWidth: 0,
-                useHTML: true
-            }
-        }
-    }
-};
+  setInterval(function ( ) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        var point,
+          newVal,
+          inc;
+    	if (chart) {
+    		point = chart.series[0].points[0];
+    		inc = parseFloat(this.responseText);
+    		newVal =  inc;
+    		point.update(newVal);
+    	}
+      }
+    };
+    xhttp.open("GET", chartConfig.dataEndpoint, true);
+    xhttp.send();
+  }, chartConfig.updateFrequency);
 
-//Pack Voltage V1
-var PackVoltageV1 = Highcharts.chart('container-PackVoltageV1', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Pack Voltage V1'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Pack Voltage V1',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">V</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' V'
-        }
-    }]
-}));
+});
 
-//Pack Voltage V2
-var PackVoltageV2 = Highcharts.chart('container-PackVoltageV2', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Pack Voltage V2'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Pack Voltage V2',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">V</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' V'
-        }
-    }]
-}));
-
-//Pack Voltage V3
-var PackVoltageV3 = Highcharts.chart('container-PackVoltageV3', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Pack Voltage V3'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Pack Voltage V3',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">V</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' V'
-        }
-    }]
-}));
-
-//Current
-var Current = Highcharts.chart('container-Current', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Current'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Current',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">A</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' A'
-        }
-    }]
-}));
-
-//Power
-var Power = Highcharts.chart('container-Power', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Power'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Power',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">KW</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' KW'
-        }
-    }]
-}));
-
-//AmpereHours
-var AmpereHours = Highcharts.chart('container-AmpereHours', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Ampere Hours'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Ampere Hours',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">Ah</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' Ah'
-        }
-    }]
-}));
-
-//KilowattHours
-var KilowattHours = Highcharts.chart('container-KilowattHours', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Kilowatt Hours'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Pack Voltage V1',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">KWh</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' KWh'
-        }
-    }]
-}));
-
-//Temperature
-var Temperature = Highcharts.chart('container-Temperature', Highcharts.merge(gaugeOptions, {
-    yAxis: {
-        min: 0,
-        max: 1000,
-        title: {
-            text: 'Temperature'
-        }
-    },
-    credits: {
-        enabled: false
-    },
-    series: [{
-        name: 'Temperature',
-        data: [900],
-        dataLabels: {
-            format:
-                '<div style="text-align:center">' +
-                '<span style="font-size:25px">{y}</span><br/>' +
-                '<span style="font-size:12px;opacity:0.4">&#8451;</span>' +
-                '</div>'
-        },
-        tooltip: {
-            valueSuffix: ' °C'
-        }
-    }]
-}));
 
 
 </script>
