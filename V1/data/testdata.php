@@ -11,6 +11,10 @@ if (array_key_exists('power', $request)) {
   echo rand(100, 300);
 } else if (array_key_exists('temperature', $request)) {
   echo rand(0, 60);
+} else if (array_key_exists('kilowatthours', $request)) {
+  echo rand(0, 60);
+} else if (array_key_exists('amperehours', $request)) {
+  echo rand(0, 60);
 } else {
 
   //handle post

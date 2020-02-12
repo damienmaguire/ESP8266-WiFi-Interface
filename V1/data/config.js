@@ -79,5 +79,23 @@ var config = {
     updateFrequency: 1000,
     dataEndpoint: '/Temperature',
     enabled: true
+  }, {
+    min: 0,
+    max: 100,
+    initialValue: 0,
+    title: 'Kilowatt Hours',
+    valueSuffix: ' KWh',
+    updateFrequency: 1000,
+    dataEndpoint: '/KilowattHours',
+    enabled: true
+  }, {
+    min: 0,
+    max: 100,
+    initialValue: 0,
+    title: 'Ampere Hours',
+    valueSuffix: ' Ah',
+    updateFrequency: 1000,
+    dataEndpoint: '/AmpereHours',
+    enabled: true
   }]
 }
