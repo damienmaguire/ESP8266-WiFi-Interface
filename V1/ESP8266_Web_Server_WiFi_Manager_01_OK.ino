@@ -3,17 +3,21 @@
 #include <ESP8266WebServer.h>
 #include <FS.h>
 
-#define USESERIAL
-#define USELED
-
 #include "Config.h"
 #include "FirmwareReset.h"
 #include "AdminPage.h"
 
+//move to admin page/eprom
+//Uncomment to join WIFI instead of creating an access point
+//#define JOIN_WIFI
+const char* ssid = "myssid";
+const char* password = "mypasswd";
+
 ESP8266WebServer server(80); //Server on port 80
 
-// declaration of a variable
-String v1, v2, v3, i, p, ah, kwh, t;
+const int MAX_VALUES = 10;
+String keys[MAX_VALUES];
+String values[MAX_VALUES];
 
 //Redirect to our html web page
 void handleRoot() {
@@ -38,70 +42,160 @@ void handleWebRequests() {
   Serial.println(message);
 }
 
-void PackVoltageV1() {
-  server.send(200, "text/plain", v1);
-}
-void PackVoltageV2() {
-  server.send(200, "text/plain", v2);
-}
-void PackVoltageV3() {
-  server.send(200, "text/plain", v3);
-}
-void Power() {
-  server.send(200, "text/plain", i);
-}
-void Current() {
-  server.send(200, "text/plain", p);
-}
-void AmpereHours() {
-  server.send(200, "text/plain", ah);
-}
-void KilowattHours() {
-  server.send(200, "text/plain", kwh);
-}
-void Temperature() {
-  server.send(200, "text/plain", t);
+void Value() {
+  String key = server.arg(0);
+  for(int i; i < MAX_VALUES; i++) {
+    if (keys[i] == key) {
+        server.send(200, "text/plain", values[i]);
+    }
+  }
+
+  server.send(200, "text/plain", "Prefix not in input stream");
+
 }
 
+void SaveChartConfig() {
+   String frequencies[MAX_VALUES];
+   String mins[MAX_VALUES];
+   String maxs[MAX_VALUES];
+   String titles[MAX_VALUES];
+   String prefixes[MAX_VALUES];
+   String sufixes[MAX_VALUES];
+
+   uint8_t highestIndex = 0;
+   for (uint8_t i = 0; i < server.args(); i++) {
+    uint8_t index = server.argName(i).substring(server.argName(i).indexOf('[') + 1, server.argName(i).indexOf(']')).toInt();
+    if (index > highestIndex) {
+      highestIndex = index;
+    }
+    String key = server.argName(i).substring(0, server.argName(i).indexOf('['));
+    if (key == "min") {
+        mins[index] = server.arg(i);
+    } else if (key == "max") {
+        maxs[index] = server.arg(i);
+    } else if (key == "frequency") {
+        frequencies[index] = server.arg(i);
+    } else if (key == "title") {
+        titles[index] = server.arg(i);
+    } else if (key == "suffix") {
+        sufixes[index] = server.arg(i);
+    } else if (key == "prefix") {
+        prefixes[index] = server.arg(i);
+    }
+   }
+
+   String json = "[";
+
+   for (uint8_t i = 0; i <= highestIndex; i++) {
+    if (i > 0) {
+      json += ",";
+    }
+    json += "{";
+    json += "\"min\": " + mins[i] + ",";
+    json += "\"max\": " + maxs[i] + ",";
+    json += "\"updateFrequency\": " + frequencies[i] + ",";
+    json += "\"title\": \"" + titles[i] + "\",";
+    json += "\"prefix\": \"" + prefixes[i] + "\",";
+    json += "\"valueSuffix\": \"" + sufixes[i] + "\",";
+    json += "\"initialValue\": 0";
+
+
+    json += "}";
+
+   }
+
+   json += "]";
+   Serial.println(json);
+   SPIFFS.remove("/data.json");
+   File file = SPIFFS.open("/data.json", "w");
+   file.print(json);
+   file.close();
+   server.sendHeader("Location", "/index.html", true);
+   server.send(302, "text/plain", "");
+}
+
+void ChartConfig() {
+  File file = SPIFFS.open("/data.json", "r");
+  if (file && file.size()) {
+    String content;
+    int i;
+    for(i=0;i<file.size();i++) //Read upto complete file size
+     {
+       content =  content + (char)file.read();
+     }
+
+     content = "var chartConfig = " + content;
+     file.close();  //Close file
+     server.send(200, "text/plain", content);
+
+  } else {
+
+       server.send(200, "text/plain", "No File");
+
+  }
+
+}
+
+
+  void SetupAP() {
+
+    InitConfig();
+
+    //Start the wifi with the required username and password
+    WiFi.mode(WIFI_AP);
+
+    LoadConfig();
+    PrintConfig();
+
+    //Check to see if the flag is still set from the previous boot
+    if (checkResetFlag()) {
+      //Do the firmware reset here
+      Serial.printf("Reset Firmware\n");
+
+      //Set the ssid to default value and turn off the password
+      WiFi.softAP("APConfig", "", 1, false, 1);
+    }
+    else {
+      WiFi.softAP(config.ssid, config.pass, 1, false, 1);
+    }
+  }
+
+  void JoinWifi() {
+    // Connect to WiFi
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println(WiFi.localIP());
+
+  }
+
 void setup(void) {
-  Serial.begin(19200);
+  Serial.begin(115200);
 
   Serial.println("MCU Rebooted");
 
   //Initialize File System
   SPIFFS.begin();
 
-  InitConfig();
-
-  //Start the wifi with the required username and password
-  WiFi.mode(WIFI_AP);
-
-  LoadConfig();
-  PrintConfig();
-
-  //Check to see if the flag is still set from the previous boot
-  if (checkResetFlag()) {
-    //Do the firmware reset here
-    Serial.printf("Reset Firmware\n");
-
-    //Set the ssid to default value and turn off the password
-    WiFi.softAP("APConfig", "", 1, false, 1);
-  }
-  else {
-    WiFi.softAP(config.ssid, config.pass, 1, false, 1);
-  }
+  #ifdef JOIN_WIFI
+  JoinWifi();
+  #endif
+  #ifndef JOIN_WIFI
+  SetupAP();
+  #endif
 
   //Initialize Webserver
   server.on("/", handleRoot);
   server.on("/admin", std::bind(serveAdmin, &server));
-  server.on("/PackVoltageV1", PackVoltageV1);
-  server.on("/PackVoltageV2", PackVoltageV2);
-  server.on("/PackVoltageV3", PackVoltageV3);
-  server.on("/Current", Current);
-  server.on("/Power", Power);
-  server.on("/AmpereHours", AmpereHours);
-  server.on("/KilowattHours", KilowattHours);
-  server.on("/Temperature", Temperature);
+  server.on("/data", Value);
+  server.on("/SaveConfig", SaveChartConfig);
+  server.on("/ChartConfig", ChartConfig);
+
   server.onNotFound(handleWebRequests);
   server.begin();
   Serial.println("HTTP server started");
@@ -131,32 +225,34 @@ bool loadFromSpiffs(String path) {
 }
 
 void loop(void) {
+
   //Handle client requests
   server.handleClient();
+  String data = Serial.readStringUntil('\n');
 
-  String justRates = Serial.readStringUntil('\n');
+  if (data != "") {
+    String part;
+    int terminate = false;
+    int index = 0;
+    do {
+      part = data.substring(0, data.indexOf(','));
+      data = data.substring(data.indexOf(',') + 1);
+      terminate  = part.indexOf('*');
+      if (terminate != -1) {
+        part = part.substring(0, part.length() -1);
+      }
+      String key = part.substring(0, part.indexOf(':'));
+      String value = part.substring(part.indexOf(':') + 1);
+      Serial.println("adding: " + key + " " + value);
 
-  //split justrate variable from begining to first "," charactor
-  int x1stSpaceIndex = justRates.indexOf(",");
-  int x2ndSpaceIndex = justRates.indexOf(",", x1stSpaceIndex + 1);
-  int x3rdSpaceIndex = justRates.indexOf(",", x2ndSpaceIndex + 1);
-  int x4thSpaceIndex = justRates.indexOf(",", x3rdSpaceIndex + 1);
-  int x5thSpaceIndex = justRates.indexOf(",", x4thSpaceIndex + 1);
-  int x6thSpaceIndex = justRates.indexOf(",", x5thSpaceIndex + 1);
-  int x7thSpaceIndex = justRates.indexOf(",", x6thSpaceIndex + 1);
+      keys[index] = key;
+      values[index] = value;
 
-  v1 = (justRates.substring(1, x1stSpaceIndex)).toInt();
-  v2 = (justRates.substring(x1stSpaceIndex + 2, x2ndSpaceIndex));
-  v3 = (justRates.substring(x2ndSpaceIndex + 2, x3rdSpaceIndex));
-  i = (justRates.substring(x3rdSpaceIndex + 2, x4thSpaceIndex));
-  p = (justRates.substring(x4thSpaceIndex + 2, x5thSpaceIndex));
-  ah = (justRates.substring(x5thSpaceIndex + 3, x6thSpaceIndex));
-  kwh = (justRates.substring(x6thSpaceIndex + 4, x7thSpaceIndex));
-  t = (justRates.substring(x7thSpaceIndex + 2)).toInt();
+      index++;
 
-  Serial.println();
-  Serial.print("Serial input - ");
-  Serial.println(justRates);
-  Serial.print("Split values - ");
-  Serial.println("v1 : " + String(v1) + " v2 : " + String(v2) + " v3 : " + (v3) + " i : " + String(i) + " p : " + String(p) + " ah : " + String(ah) + " kwh " + String(kwh) + " t : " + String(t));
+    } while (terminate == -1 && index < MAX_VALUES);
+  }
+
+  delay(1);
+
 }

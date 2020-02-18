@@ -4,22 +4,26 @@
   <script src="/highcharts.js"></script>
   <script src="/highcharts-more.js"></script>
   <script src="/solid-gauge.js"></script>
-  <script src="/exporting.js"></script>
-  <script src="/export-data.js"></script>
-
-  <!-- use mock data server -->
-  <!-- <script src="/config-dev.json"></script> -->
+  <!-- <script src="/testdata.php?chart"></script> -->
   <!-- use ESP8266 Server -->
-  <script src="/config.json"></script>
 
-  <style>
-
-  .highcharts-figure .chart-container {
+<script src="/ChartConfig"></script>
+<style>
+.highcharts-figure {
+	overflow: auto;
+}
+.highcharts-figure .chart-container {
 	width: 300px;
 	height: 200px;
 	float: left;
 }
-
+.highcharts-figure .chart-container-edit input{
+	padding: 3px;
+}
+.highcharts-figure .chart-container-edit label{
+	display: block;
+	padding: 5px;
+}
 .highcharts-figure, .highcharts-data-table table {
 	width: 1200px;
 	margin: 0 auto;
@@ -53,6 +57,18 @@
     background: #f1f7ff;
 }
 
+.edit {
+	position: absolute;
+	right: 5px;
+	top: 5px;
+	background: url('/cog-solid.png');
+	opacity:0.4;
+	display: inline-block;
+	width: 30px;
+	height:30px;
+	text-indent: -99999px;
+}
+
 @media (max-width: 600px) {
 	.highcharts-figure, .highcharts-data-table table {
 		width: 100%;
@@ -65,72 +81,128 @@
 
 }
 
-
-
-  </style>
+</style>
 </head>
 <body>
   <h2></h2>
+  <a class="edit" href="/edit.html">Edit</a>
   <figure id="container" class="highcharts-figure">
   </figure>
 
 </body>
 
-
 <script>
+
+var config = {
+saveAction: '/SaveConfig',
+endPoint: '/data?value=',
+defaultChartConfig: {
+    chart: {
+        type: 'solidgauge'
+    },
+    title: null,
+    pane: {
+        center: ['50%', '85%'],
+        size: '140%',
+        startAngle: -90,
+        endAngle: 90,
+        background: {
+            backgroundColor:
+                Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+            innerRadius: '60%',
+            outerRadius: '100%',
+            shape: 'arc'
+        }
+    },
+    exporting: {
+        enabled: false
+    },
+    tooltip: {
+        enabled: false
+    },
+    // the value axis
+    yAxis: {
+        stops: [
+            [0.1, '#55BF3B'], // green
+            [0.5, '#DDDF0D'], // yellow
+            [0.9, '#DF5353']  // red
+        ],
+        lineWidth: 0,
+        tickWidth: 0,
+        minorTickInterval: null,
+        tickAmount: 2,
+        title: {
+            y: -70
+        },
+        labels: {
+            y: 16
+        }
+    },
+    plotOptions: {
+        solidgauge: {
+            dataLabels: {
+                y: 5,
+                borderWidth: 0,
+                useHTML: true
+            }
+        }
+    }
+}
+}
+
 var chartContainer = document.getElementById("container");
 
+chartConfig.forEach(function(con) {
 
-config.charts.forEach(function(chartConfig) {
+    var node = document.createElement("div");
+    node.classList.add('chart-container')
+    chartContainer.appendChild(node);
+    var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
+        yAxis: {
+            min: con.min,
+            max: con.max,
+            title: {
+                text: con.title
+            }
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+            name: con.title,
+            data: [con.initialValue],
+            dataLabels: {
+                format:
+                    '<div style="text-align:center">' +
+                    '<span style="font-size:25px">{y}</span><br/>' +
+                    '<span style="font-size:12px;opacity:0.4">' + con.valueSuffix + '</span>' +
+                    '</div>'
+            },
+            tooltip: {
+                valueSuffix: con.valueSuffix
+            }
+        }]
+    }));
 
-  var node = document.createElement("div");
-  node.classList.add('chart-container')
-  chartContainer.appendChild(node);
-  var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
-      yAxis: {
-          min: chartConfig.min,
-          max: chartConfig.max,
-          title: {
-              text: chartConfig.title
-          }
-      },
-      credits: {
-          enabled: false
-      },
-      series: [{
-          name: chartConfig.title,
-          data: [chartConfig.initialValue],
-          dataLabels: {
-              format:
-                  '<div style="text-align:center">' +
-                  '<span style="font-size:25px">{y}</span><br/>' +
-                  '<span style="font-size:12px;opacity:0.4">V</span>' +
-                  '</div>'
-          },
-          tooltip: {
-              valueSuffix: chartConfig.valueSuffix
-          }
-      }]
-  }));
+    setInterval(function ( ) {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var point,
+            newVal,
+            inc;
+      	if (chart) {
+      		point = chart.series[0].points[0];
+      		inc = parseFloat(this.responseText);
+      		newVal =  inc;
+      		point.update(newVal);
+      	}
+        }
+      };
+      xhttp.open("GET", config.endPoint + con.prefix, true);
+      xhttp.send();
+    }, con.updateFrequency);
 
-  setInterval(function ( ) {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        var point,
-          newVal,
-          inc;
-    	if (chart) {
-    		point = chart.series[0].points[0];
-    		inc = parseFloat(this.responseText);
-    		newVal =  inc;
-    		point.update(newVal);
-    	}
-      }
-    };
-    xhttp.open("GET", chartConfig.dataEndpoint, true);
-    xhttp.send();
-  }, chartConfig.updateFrequency);
 
 });
 
