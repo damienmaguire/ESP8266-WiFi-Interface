@@ -4,12 +4,92 @@
 
   <!-- use mock data server -->
   <script src="/highcharts.js"></script>
-  <script src="/config-dev.js"></script>
-  <!-- use ESP8266 Server -->
-  <!-- <script src="/config.js"></script> -->
+  <script src="/ChartConfig"></script>
+  <!-- <script src="/testdata.php?chart"></script> -->
 
-  <link rel="stylesheet" type="text/css" href="style.css">
+  <style>
+  .highcharts-figure {
+  	overflow: auto;
+  }
+  .highcharts-figure .chart-container {
+  	width: 300px;
+  	float: left;
+  }
+  .highcharts-figure .chart-container-edit input{
+  	padding: 3px;
+  }
+  .highcharts-figure .chart-container-edit label{
+  	display: block;
+  	padding: 5px;
+  }
+  .highcharts-figure, .highcharts-data-table table {
+  	width: 1200px;
+  	margin: 0 auto;
+  }
 
+  .highcharts-data-table table {
+      font-family: Verdana, sans-serif;
+      border-collapse: collapse;
+      border: 1px solid #EBEBEB;
+      margin: 10px auto;
+      text-align: center;
+      width: 100%;
+      max-width: 500px;
+  }
+  .highcharts-data-table caption {
+      padding: 1em 0;
+      font-size: 1.2em;
+      color: #555;
+  }
+  .highcharts-data-table th {
+  	font-weight: 600;
+      padding: 0.5em;
+  }
+  .highcharts-data-table td, .highcharts-data-table th, .highcharts-data-table caption {
+      padding: 0.5em;
+  }
+  .highcharts-data-table thead tr, .highcharts-data-table tr:nth-child(even) {
+      background: #f8f8f8;
+  }
+  .highcharts-data-table tr:hover {
+      background: #f1f7ff;
+  }
+
+  .edit {
+  	position: absolute;
+  	right: 5px;
+  	top: 5px;
+  	background: url('cog-solid.png');
+  	opacity:0.4;
+  	display: inline-block;
+  	width: 30px;
+  	height:30px;
+  	text-indent: -99999px;
+  }
+
+  .delete {
+  	background: url('trash-solid.png');
+  	opacity:0.4;
+  	display: inline-block;
+    height:28px;
+  	width:25px;
+  	text-indent: -99999px;
+    margin-left: 30px;
+  }
+
+  @media (max-width: 600px) {
+  	.highcharts-figure, .highcharts-data-table table {
+  		width: 100%;
+  	}
+  	.highcharts-figure .chart-container {
+  		width: 300px;
+  		float: none;
+  		margin: 0 auto;
+  	}
+
+  }
+
+  </style>
 </head>
 <body>
   <h1>Edit Charts</h1>
@@ -17,9 +97,112 @@
     <div id="container" class="highcharts-figure">
     </div>
     <button id="save">Save</button>
+    <a href="javascript:void()" id="add">Add Chart</a>
+
   </form>
 
 </body>
-<script src="/edit.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  function setupForm() {
+    var form = document.getElementById("form");
+    form.setAttribute('action', saveAction);
+    form.setAttribute('method', 'post');
+  }
+
+
+  function addUpdateFrequency(container, conf, index)  {
+    addInput("frequency[" + index + "]", conf.updateFrequency, "update frequency (ms)", "8", container);
+  }
+
+  function addMin(container, conf, index)  {
+    addInput("min[" + index + "]", conf.min, "min", "5", container);
+  }
+
+  function addMax(container, conf, index)  {
+    addInput("max[" + index + "]", conf.max, "max", "5", container);
+  }
+
+  function addPrefix(container, conf, index)  {
+    addInput("prefix[" + index + "]", conf.prefix, "serial data prefix", "5", container);
+  }
+
+  function addSuffix(container, conf, index)  {
+    addInput("suffix[" + index + "]", conf.valueSuffix, "units", "5", container);
+  }
+
+  function addTitle(container, conf, index) {
+    var h2Node = document.createElement("h2");
+    var deleteNode = document.createElement("a");
+    deleteNode.append('delete');
+    deleteNode.classList.add('delete');
+    deleteNode.onclick = function() {
+      container.remove();
+    };
+
+    h2Node.append("Chart")
+    h2Node.appendChild(deleteNode)
+    container.appendChild(h2Node)
+
+    addInput("title[" + index + "]", conf.title, "title", "15", container);
+
+  }
+
+
+  function addChart(conf, index) {
+    var setting = document.createElement("div");
+    setting.classList.add('chart-container')
+    setting.classList.add('chart-container-edit')
+
+    addTitle(setting, conf, index)
+    addUpdateFrequency(setting, conf, index)
+    addMin(setting, conf, index)
+    addMax(setting, conf, index)
+    addPrefix(setting, conf, index)
+    addSuffix(setting, conf, index)
+
+    chartContainer.appendChild(setting);
+    lastIndex = index
+  }
+
+  function addInput(name, value, label, size, container) {
+    var node = document.createElement("label");
+    var inputNode = document.createElement("input");
+    inputNode.setAttribute('name', name);
+    inputNode.setAttribute('type', 'text');
+    inputNode.setAttribute('size', size);
+    inputNode.setAttribute('value', value);
+    node.append(inputNode);
+    node.append(" " + label)
+
+    container.appendChild(node)
+  }
+
+  const saveAction = '/SaveConfig'
+  var lastIndex = 0
+  var chartContainer = document.getElementById("container");
+  setupForm();
+
+  var addButton = document.getElementById("add");
+  addButton.onclick = function(e) {
+    e.preventDefault()
+
+    addChart({
+      title: "new chart",
+      updateFrequency: 5000,
+      min: 0,
+      max: 999,
+      prefix: '',
+      valueSuffix: ''
+    }, lastIndex + 1)
+  }
+
+  chartConfig.forEach(function(conf, index) {
+    addChart(conf, index)
+  });
+
+});
+</script>
 
 </html>

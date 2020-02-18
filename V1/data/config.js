@@ -51,51 +51,5 @@ var config = {
               }
           }
       }
-  },
-  charts: [{
-    min: 100,
-    max: 300,
-    initialValue: 203,
-    title: 'Pack Voltage',
-    valueSuffix: ' V',
-    updateFrequency: 10000,
-    dataEndpoint: '/PackVoltageV1',
-    enabled: true
-  }, {
-    min: 0,
-    max: 200,
-    initialValue: 70,
-    title: 'Power',
-    valueSuffix: ' KW',
-    updateFrequency: 1000,
-    dataEndpoint: '/Power',
-    enabled: true
-  }, {
-    min: 0,
-    max: 100,
-    initialValue: 0,
-    title: 'Temperature',
-    valueSuffix: ' °C',
-    updateFrequency: 1000,
-    dataEndpoint: '/Temperature',
-    enabled: true
-  }, {
-    min: 0,
-    max: 100,
-    initialValue: 0,
-    title: 'Kilowatt Hours',
-    valueSuffix: ' KWh',
-    updateFrequency: 1000,
-    dataEndpoint: '/KilowattHours',
-    enabled: true
-  }, {
-    min: 0,
-    max: 100,
-    initialValue: 0,
-    title: 'Ampere Hours',
-    valueSuffix: ' Ah',
-    updateFrequency: 1000,
-    dataEndpoint: '/AmpereHours',
-    enabled: true
-  }]
+  }
 }
