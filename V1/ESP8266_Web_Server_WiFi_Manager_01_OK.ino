@@ -7,11 +7,7 @@
 #include "FirmwareReset.h"
 #include "AdminPage.h"
 
-//move to admin page/eprom
-//Uncomment to join WIFI instead of creating an access point
-//#define JOIN_WIFI
-const char* ssid = "myssid";
-const char* password = "mypasswd";
+#define USESERIAL
 
 ESP8266WebServer server(80); //Server on port 80
 
@@ -138,14 +134,9 @@ void ChartConfig() {
 
 
   void SetupAP() {
-
-    InitConfig();
-
+    Serial.printf("Starting: '%s'\n", config.ssid);
     //Start the wifi with the required username and password
     WiFi.mode(WIFI_AP);
-
-    LoadConfig();
-    PrintConfig();
 
     //Check to see if the flag is still set from the previous boot
     if (checkResetFlag()) {
@@ -162,15 +153,25 @@ void ChartConfig() {
 
   void JoinWifi() {
     // Connect to WiFi
+    Serial.printf("Joining: '%s'\n", config.ssid);
+    unsigned int tries = 0;
+
     WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    WiFi.begin(config.ssid, config.pass);
+    while (WiFi.status() != WL_CONNECTED && tries < 20) {
+      tries++;
+      delay(500);
+      Serial.print(".");
     }
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println(WiFi.localIP());
+
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("WiFi join failed");
+      SetupAP();
+    } else {
+      Serial.println("");
+      Serial.println("WiFi connected");
+      Serial.println(WiFi.localIP());
+    }
 
   }
 
@@ -182,13 +183,17 @@ void setup(void) {
   //Initialize File System
   SPIFFS.begin();
 
-  #ifdef JOIN_WIFI
-  JoinWifi();
-  #endif
-  #ifndef JOIN_WIFI
-  SetupAP();
-  #endif
+  InitConfig();
+  LoadConfig();
+  PrintConfig();
 
+  String wifimode = String(config.wifimode);
+  wifimode.trim();
+  if (wifimode == "JOIN") {
+    JoinWifi();
+  } else {
+    SetupAP();
+  }
   //Initialize Webserver
   server.on("/", handleRoot);
   server.on("/admin", std::bind(serveAdmin, &server));
