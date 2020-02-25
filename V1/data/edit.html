@@ -114,11 +114,6 @@ document.addEventListener("DOMContentLoaded", function() {
     form.setAttribute('method', 'post');
   }
 
-
-  function addUpdateFrequency(container, conf, index)  {
-    addInput("frequency[" + index + "]", conf.updateFrequency, "update frequency (ms)", "8", container);
-  }
-
   function addMin(container, conf, index)  {
     var node = addInput("min[" + index + "]", conf.min, "min", "5", container, 'gauge-dep');
     if (conf.type != 'gauge') {
@@ -211,7 +206,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     addTitle(setting, conf, index)
     addType(setting, conf, index)
-    addUpdateFrequency(setting, conf, index)
     addMin(setting, conf, index)
     addMax(setting, conf, index)
 
@@ -240,7 +234,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return node
   }
 
-  const saveAction = '/testdata?save'
+  const saveAction = '/SaveConfig'
   var lastIndex = 0
   var chartContainer = document.getElementById("container");
   setupForm();
@@ -251,10 +245,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     addChart({
       title: "new chart",
-      updateFrequency: 5000,
       min: 0,
       max: 999,
       prefix: '',
+      type:'gauge',
       valueSuffix: ''
     }, lastIndex + 1)
   }

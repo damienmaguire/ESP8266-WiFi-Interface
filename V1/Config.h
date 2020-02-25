@@ -31,7 +31,7 @@ void SaveConfig() {
   Serial.printf("Save Config\n");
 #endif
   // Store the new settings to EEPROM
-  EEPROM_writeAnything(0,  config);
+  EEPROM_writeAnything(0,  config);    
   EEPROM.commit();
 }
 
@@ -40,7 +40,7 @@ void ResetConfig() {
 #ifdef USESERIAL
   Serial.printf("Reset Config\n");
 #endif
-
+  
   // If the EEROM isn't valid then create a unique name for the wifi
   sprintf(config.ssid, "%s %06X", SSID_DEFAULT, ESP.getChipId());
   sprintf(config.pass, PASS_DEFAULT);
@@ -52,7 +52,7 @@ void ResetConfig() {
 // Checks all of the bytes in the string array to make sure they are valid characters
 bool ValidateString(char* value) {
   bool valid = true;
-
+  
   //Check to see if the string is an acceptable length
   if((strlen(value) < MIN_STR_LEN) && (strlen(value) >= MAX_STR_LEN)) {
     valid = false;
@@ -65,14 +65,14 @@ bool ValidateString(char* value) {
           if(value[i] != '_')
             valid = false;
   }
-
+  
   return valid;
 }
 
 // Loads the config values from EEPROM, leaves the default values if the EEPROM hasn't been set yet
 void LoadConfig() {
   bool eepromValid = true;
-
+  
   // Load the config variables from EEPROM
   config_t eepromConfig;
   EEPROM_readAnything(0, eepromConfig);
@@ -80,17 +80,17 @@ void LoadConfig() {
   //Check to see if the config variables loaded from eeprom are valid
   eepromValid &= ValidateString(eepromConfig.ssid);
   eepromValid &= ValidateString(eepromConfig.pass);
-
+  
   if(eepromValid) {
-    Serial.printf("Loading EEPROM\n");
+    Serial.printf("Loading EEPROM\n");  
 
     strcpy(config.ssid, eepromConfig.ssid);
     strcpy(config.pass, eepromConfig.pass);
     strcpy(config.wifimode, eepromConfig.wifimode);
 
-  }
+  }  
   else {
-    Serial.printf("Reset EEPROM\n");
+    Serial.printf("Reset EEPROM\n");  
 
     // If the EEROM isn't valid then create a unique name for the wifi
     ResetConfig();
@@ -102,7 +102,7 @@ void LoadConfig() {
 // Sends a copy of the config values out to the serial port
 void PrintConfig() {
 #ifdef USESERIAL
-  Serial.printf("SSID: '%s'\n", config.ssid);
+  Serial.printf("SSID: '%s'\n", config.ssid);  
   Serial.printf("Pass: '%s'\n", config.pass);
   Serial.printf("Mode: '%s'\n", config.wifimode);
 

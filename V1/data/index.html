@@ -118,7 +118,7 @@
 
 var config = {
 saveAction: '/SaveConfig',
-endPoint: '/data?value=',
+endPoint: '/data',
 defaultChartConfig: {
     chart: {
         type: 'solidgauge'
@@ -174,6 +174,7 @@ defaultChartConfig: {
 }
 
 var chartContainer = document.getElementById("container");
+const display = [];
 
 chartConfig.forEach(function(con) {
 
@@ -208,24 +209,13 @@ chartConfig.forEach(function(con) {
               }
           }]
       }));
-      setInterval(function ( ) {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            var point,
-              newVal,
-              inc;
-        	if (chart) {
-        		point = chart.series[0].points[0];
-        		inc = parseFloat(this.responseText);
-        		newVal =  inc;
-        		point.update(newVal);
-        	}
-          }
-        };
-        xhttp.open("GET", config.endPoint + con.prefix, true);
-        xhttp.send();
-      }, con.updateFrequency);
+
+      display.push({
+        'type': con.type,
+        'chart': chart,
+        'prefix': con.prefix
+      })
+
     } else if (con.type == 'text') {
 
       var title = document.createElement("h2");
@@ -244,24 +234,61 @@ chartConfig.forEach(function(con) {
 
       node.appendChild(suffix)
 
-      setInterval(function ( ) {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            content.innerHTML = this.responseText
-          }
-        };
-        xhttp.open("GET", config.endPoint + con.prefix, true);
-        xhttp.send();
-      }, con.updateFrequency);
+      display.push({
+        'type': con.type,
+        'chart': content,
+        'prefix': con.prefix
+      })
+    }
+});
 
+const getDisplayBlock = function(prefix) {
+  for (const b of display) {
+    if (prefix == b.prefix) {
+      return b;
+    }
+  }
+}
+
+const updateInterval = 1000;
+const getData = function ( ) {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4){
+      setTimeout(getData
+      , updateInterval);
+
+      if (this.status == 200) {
+        const data = JSON.parse(this.responseText)
+        const keys = Object.keys(data)
+        for (const key of keys) {
+          const displayBlock = getDisplayBlock(key)
+          if (displayBlock && displayBlock.type == 'text') {
+            displayBlock.chart.innerHTML = data[key]
+          } else if (displayBlock && displayBlock.type == 'gauge') {
+            var point,
+                newVal,
+                inc;
+          	if (displayBlock.chart ) {
+          		point = displayBlock.chart.series[0].points[0];
+          		inc = parseFloat(data[key]);
+          		newVal =  inc;
+          		point.update(newVal);
+          	}
+          }
+        }
+      }
     }
 
 
+  };
+  xhttp.open("GET", config.endPoint, true);
+  xhttp.send();
+};
 
-
-
-});
+//Don't spam requests faster than the ESP8266 can handle
+setTimeout(getData
+, updateInterval);
 
 
 

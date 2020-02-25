@@ -8,10 +8,12 @@
 #include "AdminPage.h"
 
 #define USESERIAL
+const char* ssid = "VodafoneConnect59090278_24";
+const char* password = "2umz394zbf9af7s";
 
 ESP8266WebServer server(80); //Server on port 80
 
-const int MAX_VALUES = 10;
+const int MAX_VALUES = 15;
 String keys[MAX_VALUES];
 String values[MAX_VALUES];
 
@@ -39,24 +41,29 @@ void handleWebRequests() {
 }
 
 void Value() {
-  String key = server.arg(0);
-  for(int i; i < MAX_VALUES; i++) {
-    if (keys[i] == key) {
-        server.send(200, "text/plain", values[i]);
-    }
-  }
+   String json = "{";
+   for(int i; i < MAX_VALUES; i++) {
+     if (keys[i] != NULL) {
+        if (i != 0) {
+          json += ",";
+        }
+        json += "\"" + keys[i] + "\": \"" + values[i] + "\"";
+     }
+   }
 
-  server.send(200, "text/plain", "Prefix not in input stream");
+   json += "}";
+
+   server.send(200, "application/json", json);
 
 }
 
 void SaveChartConfig() {
-   String frequencies[MAX_VALUES];
    String mins[MAX_VALUES];
    String maxs[MAX_VALUES];
    String titles[MAX_VALUES];
    String prefixes[MAX_VALUES];
    String sufixes[MAX_VALUES];
+   String types[MAX_VALUES];
 
    uint8_t highestIndex = 0;
    for (uint8_t i = 0; i < server.args(); i++) {
@@ -69,14 +76,14 @@ void SaveChartConfig() {
         mins[index] = server.arg(i);
     } else if (key == "max") {
         maxs[index] = server.arg(i);
-    } else if (key == "frequency") {
-        frequencies[index] = server.arg(i);
     } else if (key == "title") {
         titles[index] = server.arg(i);
     } else if (key == "suffix") {
         sufixes[index] = server.arg(i);
     } else if (key == "prefix") {
         prefixes[index] = server.arg(i);
+    } else if (key == "type") {
+        types[index] = server.arg(i);
     }
    }
 
@@ -87,9 +94,11 @@ void SaveChartConfig() {
       json += ",";
     }
     json += "{";
-    json += "\"min\": " + mins[i] + ",";
-    json += "\"max\": " + maxs[i] + ",";
-    json += "\"updateFrequency\": " + frequencies[i] + ",";
+    json += "\"type\": \"" + types[i] + + "\",";
+    if (types[i] == "gauge") {
+      json += "\"min\": " + mins[i] + ",";
+      json += "\"max\": " + maxs[i] + ",";
+    }
     json += "\"title\": \"" + titles[i] + "\",";
     json += "\"prefix\": \"" + prefixes[i] + "\",";
     json += "\"valueSuffix\": \"" + sufixes[i] + "\",";
@@ -99,7 +108,7 @@ void SaveChartConfig() {
     json += "}";
 
    }
-
+    
    json += "]";
    Serial.println(json);
    SPIFFS.remove("/data.json");
@@ -112,12 +121,12 @@ void SaveChartConfig() {
 
 void ChartConfig() {
   File file = SPIFFS.open("/data.json", "r");
-  if (file && file.size()) {
+  if (file && file.size()) { 
     String content;
     int i;
     for(i=0;i<file.size();i++) //Read upto complete file size
      {
-       content =  content + (char)file.read();
+       content =  content + (char)file.read();  
      }
 
      content = "var chartConfig = " + content;
@@ -125,24 +134,24 @@ void ChartConfig() {
      server.send(200, "text/plain", content);
 
   } else {
-
+    
        server.send(200, "text/plain", "No File");
 
   }
-
+ 
 }
 
 
   void SetupAP() {
-    Serial.printf("Starting: '%s'\n", config.ssid);
+    Serial.printf("Starting: '%s'\n", config.ssid);  
     //Start the wifi with the required username and password
     WiFi.mode(WIFI_AP);
-
+  
     //Check to see if the flag is still set from the previous boot
     if (checkResetFlag()) {
       //Do the firmware reset here
       Serial.printf("Reset Firmware\n");
-
+  
       //Set the ssid to default value and turn off the password
       WiFi.softAP("APConfig", "", 1, false, 1);
     }
@@ -153,9 +162,9 @@ void ChartConfig() {
 
   void JoinWifi() {
     // Connect to WiFi
-    Serial.printf("Joining: '%s'\n", config.ssid);
+    Serial.printf("Joining: '%s'\n", config.ssid);  
     unsigned int tries = 0;
-
+    
     WiFi.mode(WIFI_STA);
     WiFi.begin(config.ssid, config.pass);
     while (WiFi.status() != WL_CONNECTED && tries < 20) {
@@ -193,7 +202,7 @@ void setup(void) {
     JoinWifi();
   } else {
     SetupAP();
-  }
+  }  
   //Initialize Webserver
   server.on("/", handleRoot);
   server.on("/admin", std::bind(serveAdmin, &server));
@@ -249,15 +258,15 @@ void loop(void) {
       String key = part.substring(0, part.indexOf(':'));
       String value = part.substring(part.indexOf(':') + 1);
       Serial.println("adding: " + key + " " + value);
-
+  
       keys[index] = key;
       values[index] = value;
-
+  
       index++;
-
+  
     } while (terminate == -1 && index < MAX_VALUES);
   }
-
+  
   delay(1);
 
 }

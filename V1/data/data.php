@@ -1,31 +1,6 @@
 <?php
-$request = $_GET['value'];
-if ('p' == $request) {
-  header('Content-Type: text/plain');
-  header("HTTP/1.1 200 OK");
-  echo rand(0, 100);
-} else if ('v' == $request) {
-  header('Content-Type: text/plain');
-  header("HTTP/1.1 200 OK");
-  echo rand(100, 300);
-} else if ('t' == $request) {
-  header('Content-Type: text/plain');
-  header("HTTP/1.1 200 OK");
-  echo rand(0, 60);
-} else if ('kwh' == $request) {
-  header('Content-Type: text/plain');
-  header("HTTP/1.1 200 OK");
-  echo rand(0, 60);
-} else if ('status' == $request) {
-  header('Content-Type: text/plain');
-  header("HTTP/1.1 200 OK");
-  echo rand(0, 60);
-} else if ('ah' ==  $request) {
-  header('Content-Type: text/plain');
-  header("HTTP/1.1 200 OK");
-  echo rand(0, 60);
-
-} else if ('chart' == $request) {
+$request = array_key_exists('value', $_GET) ? $_GET['value'] : null;
+if ('chart' == $request) {
   header('Content-Type: application/javascript');
   header("HTTP/1.1 200 OK");
   $string = file_get_contents(__DIR__."/data.json");
@@ -55,5 +30,18 @@ if ('p' == $request) {
   header('Location: /');
   exit();
 
+} else {
+  $response = new stdClass;
+  $response->p = rand(0, 100);
+  $response->v = rand(100, 300);
+  $response->t = rand(0, 60);
+  $response->kwh = rand(0, 60);
+  $response->status = rand(0, 60);
+  $response->ah = rand(0, 60);
+  $response->mph = rand(0, 60);
+  header('Content-Type: application/json');
+  header("HTTP/1.1 200 OK");
+  echo json_encode($response);
+  exit();
 }
 ?>
