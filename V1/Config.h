@@ -7,15 +7,17 @@
 #include "EEPROMAnything.h"
 
 #define MIN_STR_LEN 8
-#define MAX_STR_LEN 17
+#define MAX_STR_LEN 30
 
 #define SSID_DEFAULT "APConfig"
 #define PASS_DEFAULT "password"
+#define MODE_DEFAULT "AP"
 
 // Define a structure to hold all the variables that are going to be stored in EEPROM
 struct config_t{
   char ssid[MAX_STR_LEN] = SSID_DEFAULT;
   char pass[MAX_STR_LEN] = PASS_DEFAULT;
+  char wifimode[MAX_STR_LEN] = MODE_DEFAULT;
 } config;
 
 // Declare an area of EEPROM where the variables are stored
@@ -28,7 +30,6 @@ void SaveConfig() {
 #ifdef USESERIAL
   Serial.printf("Save Config\n");
 #endif
-
   // Store the new settings to EEPROM
   EEPROM_writeAnything(0,  config);    
   EEPROM.commit();
@@ -43,6 +44,7 @@ void ResetConfig() {
   // If the EEROM isn't valid then create a unique name for the wifi
   sprintf(config.ssid, "%s %06X", SSID_DEFAULT, ESP.getChipId());
   sprintf(config.pass, PASS_DEFAULT);
+  sprintf(config.wifimode, MODE_DEFAULT);
 
   SaveConfig();
 }
@@ -60,7 +62,8 @@ bool ValidateString(char* value) {
     for(uint8_t i = 0; i < strlen(value); i++)
       if(!isAlphaNumeric(value[i]))
         if(!isSpace(value[i]))
-          valid = false;
+          if(value[i] != '_')
+            valid = false;
   }
   
   return valid;
@@ -77,12 +80,18 @@ void LoadConfig() {
   //Check to see if the config variables loaded from eeprom are valid
   eepromValid &= ValidateString(eepromConfig.ssid);
   eepromValid &= ValidateString(eepromConfig.pass);
-
+  
   if(eepromValid) {
+    Serial.printf("Loading EEPROM\n");  
+
     strcpy(config.ssid, eepromConfig.ssid);
     strcpy(config.pass, eepromConfig.pass);
+    strcpy(config.wifimode, eepromConfig.wifimode);
+
   }  
   else {
+    Serial.printf("Reset EEPROM\n");  
+
     // If the EEROM isn't valid then create a unique name for the wifi
     ResetConfig();
     SaveConfig();
@@ -95,6 +104,8 @@ void PrintConfig() {
 #ifdef USESERIAL
   Serial.printf("SSID: '%s'\n", config.ssid);  
   Serial.printf("Pass: '%s'\n", config.pass);
+  Serial.printf("Mode: '%s'\n", config.wifimode);
+
 #endif
 }
 

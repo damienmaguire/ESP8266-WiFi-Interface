@@ -5,7 +5,7 @@
   <!-- use mock data server -->
   <script src="/highcharts.js"></script>
   <script src="/ChartConfig"></script>
-  <!-- <script src="/testdata.php?chart"></script> -->
+  <!-- <script src="/data.php?value=chart"></script> -->
 
   <style>
   .highcharts-figure {
@@ -88,6 +88,9 @@
   	}
 
   }
+  .hidden {
+    display: none !important;
+  }
 
   </style>
 </head>
@@ -111,17 +114,22 @@ document.addEventListener("DOMContentLoaded", function() {
     form.setAttribute('method', 'post');
   }
 
-
-  function addUpdateFrequency(container, conf, index)  {
-    addInput("frequency[" + index + "]", conf.updateFrequency, "update frequency (ms)", "8", container);
-  }
-
   function addMin(container, conf, index)  {
-    addInput("min[" + index + "]", conf.min, "min", "5", container);
+    var node = addInput("min[" + index + "]", conf.min, "min", "5", container, 'gauge-dep');
+    if (conf.type != 'gauge') {
+      node.classList.add('hidden');
+    } else {
+      node.classList.remove('hidden');
+    }
   }
 
   function addMax(container, conf, index)  {
-    addInput("max[" + index + "]", conf.max, "max", "5", container);
+    var node = addInput("max[" + index + "]", conf.max, "max", "5", container, 'gauge-dep');
+    if (conf.type != 'gauge') {
+      node.classList.add('hidden');
+    } else {
+      node.classList.remove('hidden');
+    }
   }
 
   function addPrefix(container, conf, index)  {
@@ -141,12 +149,53 @@ document.addEventListener("DOMContentLoaded", function() {
       container.remove();
     };
 
-    h2Node.append("Chart")
+    h2Node.append("Block")
     h2Node.appendChild(deleteNode)
     container.appendChild(h2Node)
 
     addInput("title[" + index + "]", conf.title, "title", "15", container);
 
+  }
+  function addOption(value, text, selectNode, selectedValue) {
+    var node = document.createElement("option");
+    node.setAttribute('value', value);
+    node.append(text)
+
+    if (selectedValue == value) {
+      node.setAttribute('selected', '');
+
+    }
+
+    selectNode.appendChild(node);
+  }
+
+  function addType(container, conf, index) {
+    var node = document.createElement("label");
+    var selectNode = document.createElement("select");
+    selectNode.setAttribute('name', 'type[' + index + ']');
+    addOption('gauge', 'Gauge', selectNode, conf.type);
+    addOption('text', 'Text', selectNode, conf.type);
+
+    node.append(selectNode);
+    node.append(" Type")
+
+    selectNode.addEventListener("change", function(e) {
+      const value = this.options[this.selectedIndex].value
+      const labels = e.srcElement.parentNode.parentNode.getElementsByClassName('gauge-dep')
+      if (value != 'gauge') {
+        for(var i = 0; i < labels.length; i++) {
+          labels[i].classList.add('hidden')
+
+        }
+      } else {
+        for(var i = 0; i < labels.length; i++) {
+          labels[i].classList.remove('hidden')
+
+        }
+      }
+    });
+
+    container.appendChild(node)
   }
 
 
@@ -156,9 +205,10 @@ document.addEventListener("DOMContentLoaded", function() {
     setting.classList.add('chart-container-edit')
 
     addTitle(setting, conf, index)
-    addUpdateFrequency(setting, conf, index)
+    addType(setting, conf, index)
     addMin(setting, conf, index)
     addMax(setting, conf, index)
+
     addPrefix(setting, conf, index)
     addSuffix(setting, conf, index)
 
@@ -166,8 +216,11 @@ document.addEventListener("DOMContentLoaded", function() {
     lastIndex = index
   }
 
-  function addInput(name, value, label, size, container) {
+  function addInput(name, value, label, size, container, className) {
     var node = document.createElement("label");
+    if (className) {
+      node.classList.add(className)
+    }
     var inputNode = document.createElement("input");
     inputNode.setAttribute('name', name);
     inputNode.setAttribute('type', 'text');
@@ -177,6 +230,8 @@ document.addEventListener("DOMContentLoaded", function() {
     node.append(" " + label)
 
     container.appendChild(node)
+
+    return node
   }
 
   const saveAction = '/SaveConfig'
@@ -190,10 +245,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     addChart({
       title: "new chart",
-      updateFrequency: 5000,
       min: 0,
       max: 999,
       prefix: '',
+      type:'gauge',
       valueSuffix: ''
     }, lastIndex + 1)
   }

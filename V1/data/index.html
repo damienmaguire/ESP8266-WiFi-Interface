@@ -4,7 +4,7 @@
   <script src="/highcharts.js"></script>
   <script src="/highcharts-more.js"></script>
   <script src="/solid-gauge.js"></script>
-  <!-- <script src="/testdata.php?chart"></script> -->
+  <!-- <script src="/data.php?value=chart"></script> -->
   <!-- use ESP8266 Server -->
 
 <script src="/ChartConfig"></script>
@@ -68,6 +68,29 @@
 	height:30px;
 	text-indent: -99999px;
 }
+.chart-container {
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
+}
+.chart-container h2 {
+  text-align: center;
+  font-size: 12px;
+  font-weight: normal;
+  color: #666666;
+  margin-top:12px;
+}
+
+.chart-container .text {
+  text-align: center;
+  vertical-align: middle;
+  height: 100px;
+  font-size: 90px;
+  margin: 0;
+}
+
+.chart-container .suffix {
+  text-align: center;
+  opacity: 0.4
+}
 
 @media (max-width: 600px) {
 	.highcharts-figure, .highcharts-data-table table {
@@ -95,7 +118,7 @@
 
 var config = {
 saveAction: '/SaveConfig',
-endPoint: '/data?value=',
+endPoint: '/data',
 defaultChartConfig: {
     chart: {
         type: 'solidgauge'
@@ -151,60 +174,121 @@ defaultChartConfig: {
 }
 
 var chartContainer = document.getElementById("container");
+const display = [];
 
 chartConfig.forEach(function(con) {
 
     var node = document.createElement("div");
     node.classList.add('chart-container')
     chartContainer.appendChild(node);
-    var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
-        yAxis: {
-            min: con.min,
-            max: con.max,
-            title: {
-                text: con.title
-            }
-        },
-        credits: {
-            enabled: false
-        },
-        series: [{
-            name: con.title,
-            data: [con.initialValue],
-            dataLabels: {
-                format:
-                    '<div style="text-align:center">' +
-                    '<span style="font-size:25px">{y}</span><br/>' +
-                    '<span style="font-size:12px;opacity:0.4">' + con.valueSuffix + '</span>' +
-                    '</div>'
-            },
-            tooltip: {
-                valueSuffix: con.valueSuffix
-            }
-        }]
-    }));
 
-    setInterval(function ( ) {
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          var point,
-            newVal,
-            inc;
-      	if (chart) {
-      		point = chart.series[0].points[0];
-      		inc = parseFloat(this.responseText);
-      		newVal =  inc;
-      		point.update(newVal);
-      	}
-        }
-      };
-      xhttp.open("GET", config.endPoint + con.prefix, true);
-      xhttp.send();
-    }, con.updateFrequency);
+    if (con.type == 'gauge') {
+      var chart = Highcharts.chart(node, Highcharts.merge(config.defaultChartConfig, {
+          yAxis: {
+              min: con.min,
+              max: con.max,
+              title: {
+                  text: con.title
+              }
+          },
+          credits: {
+              enabled: false
+          },
+          series: [{
+              name: con.title,
+              data: [con.initialValue],
+              dataLabels: {
+                  format:
+                      '<div style="text-align:center">' +
+                      '<span style="font-size:25px">{y}</span><br/>' +
+                      '<span style="font-size:12px;opacity:0.4">' + con.valueSuffix + '</span>' +
+                      '</div>'
+              },
+              tooltip: {
+                  valueSuffix: con.valueSuffix
+              }
+          }]
+      }));
 
+      display.push({
+        'type': con.type,
+        'chart': chart,
+        'prefix': con.prefix
+      })
 
+    } else if (con.type == 'text') {
+
+      var title = document.createElement("h2");
+      title.append(con.title)
+
+      node.appendChild(title);
+
+      var content = document.createElement("p");
+      content.classList.add('text');
+      content.append(con.initialValue)
+      node.appendChild(content);
+
+      var suffix = document.createElement("div");
+      suffix.append(con.valueSuffix)
+      suffix.classList.add('suffix');
+
+      node.appendChild(suffix)
+
+      display.push({
+        'type': con.type,
+        'chart': content,
+        'prefix': con.prefix
+      })
+    }
 });
+
+const getDisplayBlock = function(prefix) {
+  for (const b of display) {
+    if (prefix == b.prefix) {
+      return b;
+    }
+  }
+}
+
+const updateInterval = 1000;
+const getData = function ( ) {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4){
+      setTimeout(getData
+      , updateInterval);
+
+      if (this.status == 200) {
+        const data = JSON.parse(this.responseText)
+        const keys = Object.keys(data)
+        for (const key of keys) {
+          const displayBlock = getDisplayBlock(key)
+          if (displayBlock && displayBlock.type == 'text') {
+            displayBlock.chart.innerHTML = data[key]
+          } else if (displayBlock && displayBlock.type == 'gauge') {
+            var point,
+                newVal,
+                inc;
+          	if (displayBlock.chart ) {
+          		point = displayBlock.chart.series[0].points[0];
+          		inc = parseFloat(data[key]);
+          		newVal =  inc;
+          		point.update(newVal);
+          	}
+          }
+        }
+      }
+    }
+
+
+  };
+  xhttp.open("GET", config.endPoint, true);
+  xhttp.send();
+};
+
+//Don't spam requests faster than the ESP8266 can handle
+setTimeout(getData
+, updateInterval);
 
 
 
